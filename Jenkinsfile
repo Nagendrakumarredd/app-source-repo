@@ -55,18 +55,19 @@ pipeline {
             steps { sh 'mvn test' }
         }
         
-                stage('Package & Push Container') {
+        stage('Package & Push Container') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-creds',
+                    passwordVariable: 'DOCKER_PASSWORD',
+                    usernameVariable: 'DOCKER_USERNAME'
+                )]) {
                     sh """
-                        # \$DOCKER_PASSWORD uses a backslash to evaluate safely at runtime without exposing the secret
                         echo "\$DOCKER_PASSWORD" | docker login -u "\$DOCKER_USERNAME" --password-stdin
-                        
-                        # Build and push using the dynamic Jenkins environment tags
+        
                         docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
                         docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                        
-                        # Clean up local images to preserve EC2 disk space
+        
                         docker rmi ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
                     """
                 }
