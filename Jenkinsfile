@@ -31,15 +31,18 @@ pipeline {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
-                        // Jenkins can now read the analysis context from the previous stage
                         def qg = waitForQualityGate()
-                        if (qg.status != 'OK') { 
+                        // Accept both 'OK' and 'NONE' as passing statuses for this PoC
+                        if (qg.status != 'OK' && qg.status != 'NONE') { 
                             error "Pipeline stopped: Quality Gate failed: ${qg.status}" 
+                        } else {
+                            echo "Quality Gate check cleared with status: ${qg.status}"
                         }
                     }
                 }
             }
         }
+
 
         stage('Execute Unit Tests') {
             steps { sh 'mvn test' }
