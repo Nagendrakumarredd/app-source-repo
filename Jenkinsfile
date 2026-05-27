@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE     = 'YOUR_DOCKERHUB_USERNAME/simple-app'
+        DOCKER_IMAGE     = 'bhanutejaravutla/simple-app'
         MANIFEST_REPO    = '://github.com'
         SONAR_ORG        = 'tejaravutla287'
         SONAR_PROJ       = 'tejaravutla287'
