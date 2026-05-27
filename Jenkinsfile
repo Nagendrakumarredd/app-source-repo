@@ -76,21 +76,20 @@ pipeline {
         stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'git-creds', variable: 'GIT_PASSWORD')]) {
-        
+                    withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
+                        
                         sh '''
                         git config --global user.email "jenkins-bot@poc.com"
                         git config --global user.name "Jenkins GitOps Engine"
-        
+                    
                         rm -rf target-manifests
-        
-                        git clone https://tejaravutla287:${GIT_PASSWORD}@github.com/tejaravutla287/gitops-repo.git target-manifests
-        
+                    
+                        git clone https://${GIT_TOKEN}@github.com/tejaravutla287/gitops-repo.git target-manifests
+                    
                         cd target-manifests
-        
-                        # Update image tag (example for deployment.yaml)
-                        sed -i 's|image: .*|image: bhanutejaravutla/simple-app:2|' deployment.yaml
-        
+                    
+                        sed -i "s|image: .*|image: bhanutejaravutla/simple-app:${BUILD_NUMBER}|" deployment.yaml
+                    
                         git add .
                         git commit -m "Update image to build ${BUILD_NUMBER}"
                         git push
