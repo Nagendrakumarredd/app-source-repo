@@ -83,14 +83,14 @@ pipeline {
                             git config --global user.email "jenkins-bot@poc.com"
                             git config --global user.name "Jenkins GitOps Engine"
                             
-                            # Clean up old local folders if they exist
+                            # Wipe old checked out data 
                             rm -rf target-manifests
                             
-                            # FIX: Properly structure the dynamic secure clone URL
-                            git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@${MANIFEST_REPO} target-manifests
+                            # FIX: Hardcode the domain structure to bypass any environment cache leaks
+                            git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@://github.com target-manifests
                             
                             cd target-manifests
-                            sed -i "s|image: ${DOCKER_IMAGE}:.*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|g" deployment.yaml
+                            sed -i "s|image: bhanutejaravutla/simple-app:.*|image: bhanutejaravutla/simple-app:${BUILD_NUMBER}|g" deployment.yaml
                             
                             git add deployment.yaml
                             git commit -m "chore: auto-bump tag to release-${BUILD_NUMBER} [skip ci]" || echo "No changes to commit"
@@ -100,6 +100,7 @@ pipeline {
                 }
             }
         }
+
 
     }
 }
