@@ -3,6 +3,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'bhanutejaravutla/simple-app'
     }
+    
     stages {
         stage('Maven Compile & Build') {
             steps { sh 'mvn clean package -DskipTests' }
