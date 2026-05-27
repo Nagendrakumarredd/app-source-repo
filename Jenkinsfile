@@ -74,9 +74,7 @@ pipeline {
             }
         }
 
-        
         stage('Manifest GitOps Delivery Loop') {
-            stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'git-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
@@ -95,6 +93,5 @@ pipeline {
                 }
             }
         }
-
     }
 }
