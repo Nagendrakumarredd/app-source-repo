@@ -55,21 +55,18 @@ pipeline {
             steps { sh 'mvn test' }
         }
         
-        stage('Package & Push Container') {
+                stage('Package & Push Container') {
             steps {
-                // Use standard environment variable injection instead of the complex plugin wrapper
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                     sh """
-                        # 1. Log straight into DockerHub using the terminal CLI
-                        echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+                        # \$DOCKER_PASSWORD uses a backslash to evaluate safely at runtime without exposing the secret
+                        echo "\$DOCKER_PASSWORD" | docker login -u "\$DOCKER_USERNAME" --password-stdin
                         
-                        # 2. Build the container image using the native Buildx engine
+                        # Build and push using the dynamic Jenkins environment tags
                         docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
-                        
-                        # 3. Push the finalized container layers to the registry
                         docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
                         
-                        # 4. Clean up local untagged image cache to preserve EC2 disk space
+                        # Clean up local images to preserve EC2 disk space
                         docker rmi ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
                     """
                 }
