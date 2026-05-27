@@ -75,23 +75,18 @@ pipeline {
         }
 
         
-                stage('Manifest GitOps Delivery Loop') {
+        stage('Manifest GitOps Delivery Loop') {
+            stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'git-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh """
                             git config --global user.email "jenkins-bot@poc.com"
                             git config --global user.name "Jenkins GitOps Engine"
-                            
-                            # Clean up historical folder artifacts
                             rm -rf target-manifests
-                            
-                            # Explicit hardcoded target clone link to bypass cache
                             git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@://github.com target-manifests
-                            
                             cd target-manifests
                             sed -i "s|image: bhanutejaravutla/simple-app:.*|image: bhanutejaravutla/simple-app:${BUILD_NUMBER}|g" deployment.yaml
-                            
                             git add deployment.yaml
                             git commit -m "chore: auto-bump tag to release-${BUILD_NUMBER} [skip ci]" || echo "No changes to commit"
                             git push origin main
@@ -100,7 +95,6 @@ pipeline {
                 }
             }
         }
-
 
     }
 }
