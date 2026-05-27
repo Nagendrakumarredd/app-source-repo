@@ -75,7 +75,7 @@ pipeline {
         }
 
         
-        stage('Manifest GitOps Delivery Loop') {
+                stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'git-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
@@ -83,10 +83,10 @@ pipeline {
                             git config --global user.email "jenkins-bot@poc.com"
                             git config --global user.name "Jenkins GitOps Engine"
                             
-                            # Wipe old checked out data 
+                            # Clean up historical folder artifacts
                             rm -rf target-manifests
                             
-                            # FIX: Hardcode the domain structure to bypass any environment cache leaks
+                            # Explicit hardcoded target clone link to bypass cache
                             git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@://github.com target-manifests
                             
                             cd target-manifests
