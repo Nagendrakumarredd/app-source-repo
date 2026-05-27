@@ -76,18 +76,25 @@ pipeline {
         stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'git-creds', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        sh """
-                            git config --global user.email "jenkins-bot@poc.com"
-                            git config --global user.name "Jenkins GitOps Engine"
-                            rm -rf target-manifests
-                            git clone https://\$GIT_USERNAME:\$GIT_PASSWORD@://github.com target-manifests
-                            cd target-manifests
-                            sed -i "s|image: bhanutejaravutla/simple-app:.*|image: bhanutejaravutla/simple-app:${BUILD_NUMBER}|g" deployment.yaml
-                            git add deployment.yaml
-                            git commit -m "chore: auto-bump tag to release-${BUILD_NUMBER} [skip ci]" || echo "No changes to commit"
-                            git push origin main
-                        """
+                    withCredentials([string(credentialsId: 'git-creds', variable: 'GIT_PASSWORD')]) {
+        
+                        sh '''
+                        git config --global user.email "jenkins-bot@poc.com"
+                        git config --global user.name "Jenkins GitOps Engine"
+        
+                        rm -rf target-manifests
+        
+                        git clone https://tejaravutla287:${GIT_PASSWORD}@github.com/tejaravutla287/gitops-repo.git target-manifests
+        
+                        cd target-manifests
+        
+                        # Update image tag (example for deployment.yaml)
+                        sed -i 's|image: .*|image: bhanutejaravutla/simple-app:2|' deployment.yaml
+        
+                        git add .
+                        git commit -m "Update image to build ${BUILD_NUMBER}"
+                        git push
+                        '''
                     }
                 }
             }
