@@ -30,7 +30,6 @@ pipeline {
                 }
             }
         }
-
         
         stage('Verify Quality Gate') {
             steps {
