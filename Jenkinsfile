@@ -2,9 +2,9 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE     = 'bhanutejaravutla/simple-app'
-        // FIX: Provide the complete path directly to your target manifests repo
         SONAR_ORG        = 'tejaravutla287'
         SONAR_PROJ       = 'tejaravutla287'
+        JAVA_TOOL_OPTIONS = "-Xms512m -Xmx1024m -XX:MaxMetaspaceSize=512m"
     }
 
     stages {
@@ -12,23 +12,22 @@ pipeline {
             steps { sh 'mvn clean package -DskipTests' }
         }
         
-                stage('SonarCloud Scan Validation') {
+         stage('SonarCloud Scan Validation') {
             steps {
                 withSonarQubeEnv('SonarCloud') { 
                     withCredentials([string(credentialsId: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
-                        script {
-                            env.MAVEN_OPTS = "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=128m"
-                        }
+                        
                         sh """
-                            mvn sonar:sonar \
-                            -Dsonar.host.url=https://sonarcloud.io \
-                            -Dsonar.token=${SONAR_TOKEN} \
-                            -Dsonar.organization=${SONAR_ORG} \
-                            -Dsonar.projectKey=${SONAR_PROJ} \
-                            -Dsonar.workers=1 \
-                            -Dsonar.scanAllFiles=false \
-                            -Dsonar.language=java \
-                            -Dsonar.java.binaries=target/classes
+                        export MAVEN_OPTS="-Xms512m -Xmx1024m -XX:MaxMetaspaceSize=512m"
+                        
+                        mvn sonar:sonar \
+                        -Dsonar.host.url=https://sonarcloud.io \
+                        -Dsonar.token=\$SONAR_TOKEN \
+                        -Dsonar.organization=${SONAR_ORG} \
+                        -Dsonar.projectKey=${SONAR_PROJ} \
+                        -Dsonar.workers=1 \
+                        -Dsonar.scanAllFiles=false \
+                        -Dsonar.java.binaries=target/classes
                         """
                     }
                 }
