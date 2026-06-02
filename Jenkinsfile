@@ -78,47 +78,40 @@ pipeline {
             }
         }
 
-        stage('Manifest GitOps Delivery Loop') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                        sh '''
-                        git config --global user.email "jenkins-bot@poc.com"
-                        git config --global user.name "Jenkins GitOps Engine"
-        
-                        rm -rf target-manifests
-        
-                        # Use helper to cache credentials for the upcoming clone and push commands
-                        git config --global credential.helper cache
-                        
-                        # Dynamically feed authentication information directly to Git core
-                        echo "url=https://github.com
-                        username=${GIT_USER}
-                        password=${GIT_TOKEN}" | git credential approve
-        
-                        # Clean clone without variables inside the URL string
-                        git clone https://github.com target-manifests
-        
-                        cd target-manifests
-        
-                        # Modify deployment image tag values
-                        sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
-        
-                        git add .
-                        git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
-        
-                        # Push execution matches the cached authentication configuration
-                        git push origin main
-        
-                        # Wipe the temporary execution credentials out of memory cache
-                        git credential reject <<EOF
-                        url=https://github.com
-                        EOF
-                        '''
-                    }
-                }
+stage('Manifest GitOps Delivery Loop') {
+    steps {
+        script {
+            withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                sh '''
+                git config --global user.email "jenkins-bot@poc.com"
+                git config --global user.name "Jenkins GitOps Engine"
+
+                rm -rf target-manifests
+
+                # Encode the password/PAT to bypass any hyphen or parsing errors entirely
+                ENCODED_TOKEN=$(echo -n "${GIT_USER}:${GIT_TOKEN}" | base64 | tr -d '\n')
+
+                # Clone using an inline HTTP authorization header string
+                git -c http.extraHeader="Authorization: Basic ${ENCODED_TOKEN}" clone https://github.com target-manifests
+
+                cd target-manifests
+
+                # Configure the local repository to use the exact same authorization header automatically for pushing
+                git config http.extraHeader "Authorization: Basic ${ENCODED_TOKEN}"
+
+                # Update the target image deployment manifest file
+                sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
+
+                git add .
+                git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
+
+                git push origin main
+                '''
             }
         }
+    }
+}
+
 
     }
 }
