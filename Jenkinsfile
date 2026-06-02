@@ -81,7 +81,6 @@ pipeline {
 stage('Update Manifest Repo (GitOps)') {
     steps {
         script {
-            // Jenkins natively handles mask / hide for these credentials
             withCredentials([usernamePassword(
                 credentialsId: 'git-pat',
                 usernameVariable: 'GIT_USER',
@@ -89,29 +88,33 @@ stage('Update Manifest Repo (GitOps)') {
             )]) {
 
                 sh '''
-                # 1. Setup identity
                 git config --global user.email "jenkins-bot@poc.com"
                 git config --global user.name "Jenkins GitOps Engine"
 
-                # 2. Fresh clone
                 rm -rf target-manifests
-                git clone https://github.com target-manifests
+
+                # 1. Clone the repository
+                git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                 cd target-manifests
 
-                # 3. Update build number in manifest
+                # 2. Update the manifest file
                 sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
 
-                # 4. Commit changes safely
-                git add .
-                git commit -m "Update image to $BUILD_NUMBER" || echo "No changes to commit"
+                echo "Updated file:"
+                grep image deployment.yaml
 
-                # 5. Native authenticated push (No headers or base64 required)
-                git push https://${GIT_USER}:${GIT_TOKEN}@://github.com main
+                # 3. Commit the change
+                git add .
+                git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
+
+                # ✅ 4. Clean Push: Embeds credentials safely and skips interactive prompts
+                git push https://${GIT_USER}:${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git main
                 '''
             }
         }
     }
 }
+
 
 
     }
