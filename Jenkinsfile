@@ -81,7 +81,8 @@ pipeline {
         stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
+                    // ✅ FIX: Extract the password component from your Username/Password credential
+                    withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
         
                         sh """
                         git config --global user.email "jenkins-bot@poc.com"
@@ -93,7 +94,7 @@ pipeline {
         
                         cd target-manifests
         
-                        # ✅ FIX: Set remote with PAT for push
+                        # Set remote with PAT for push
                         git remote set-url origin https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git
         
                         sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
