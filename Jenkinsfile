@@ -104,13 +104,16 @@ stage('Update Manifest Repo (GitOps)') {
                 git add .
                 git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
 
-                # ✅ Use header-based auth (safe)
-                git -c http.extraheader="Authorization: Basic $(echo -n $GIT_USER:$GIT_TOKEN | base64)" \
-                push origin main
+                # 💡 Fixed: Added -w 0 to base64 to prevent broken lines
+                TOKEN_BASE64=$(echo -n "${GIT_USER}:${GIT_TOKEN}" | base64 -w 0)
+
+                # ✅ Execute push with the single line header
+                git -c http.extraheader="Authorization: Basic ${TOKEN_BASE64}" push origin main
                 '''
             }
         }
     }
 }
+
     }
 }
