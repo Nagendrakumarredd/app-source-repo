@@ -78,42 +78,39 @@ pipeline {
             }
         }
 
-stage('Manifest GitOps Delivery Loop') {
-    steps {
-        script {
-            withCredentials([usernamePassword(
-                credentialsId: 'git-pat',
-                usernameVariable: 'GIT_USER',
-                passwordVariable: 'GIT_TOKEN'
-            )]) {
-
-                sh '''
-                git config --global user.email "jenkins-bot@poc.com"
-                git config --global user.name "Jenkins GitOps Engine"
-
-                rm -rf target-manifests
-
-                git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
-
-                cd target-manifests
-
-                # ✅ create askpass helper
-                cat <<EOF > askpass.sh
-                #!/bin/sh
-                echo "$GIT_TOKEN"
-                EOF
-                chmod +x askpass.sh
-
-                export GIT_ASKPASS=$(pwd)/askpass.sh
-
-                sed -i "s|image: .*|image: $DOCKER_IMAGE:$BUILD_NUMBER|" deployment.yaml
-
-                git add .
-                git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
-                '''
+        stage('Update Manifest Repo (GitOps)') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'git-pat',
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_TOKEN'
+                    )]) {
+        
+                        sh '''
+                        git config --global user.email "jenkins-bot@poc.com"
+                        git config --global user.name "Jenkins GitOps Engine"
+        
+                        rm -rf target-manifests
+        
+                        git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+                        cd target-manifests
+        
+                        # ✅ FIXED sed (important)
+                        sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
+        
+                        echo "Updated file:"
+                        grep image deployment.yaml
+        
+                        git add .
+                        git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
+        
+                        # ✅ MAIN FIX (this was missing)
+                        git push https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git main
+                        '''
+                    }
+                }
             }
         }
-    }
-}
     }
 }
