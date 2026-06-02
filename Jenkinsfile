@@ -96,7 +96,6 @@ pipeline {
                         git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                         cd target-manifests
         
-                        # ✅ FIXED sed (important)
                         sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
         
                         echo "Updated file:"
@@ -105,8 +104,8 @@ pipeline {
                         git add .
                         git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
         
-                        # ✅ MAIN FIX (this was missing)
-                        git push https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git main
+                        # ✅ FIX HERE (quotes added)
+                        git push "https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git" main
                         '''
                     }
                 }
