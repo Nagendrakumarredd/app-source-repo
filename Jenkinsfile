@@ -81,7 +81,11 @@ pipeline {
 stage('Update Manifest Repo (GitOps)') {
     steps {
         script {
-            withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
+            withCredentials([usernamePassword(
+                credentialsId: 'git-pat',
+                usernameVariable: 'GIT_USER',
+                passwordVariable: 'GIT_TOKEN'
+            )]) {
 
                 sh '''
                 git config --global user.email "jenkins-bot@poc.com"
@@ -89,10 +93,7 @@ stage('Update Manifest Repo (GitOps)') {
 
                 rm -rf target-manifests
 
-                # ✅ clone using header auth
-                git -c http.extraheader="Authorization: Bearer $GIT_TOKEN" \
-                clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
-
+                git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                 cd target-manifests
 
                 sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
@@ -103,8 +104,8 @@ stage('Update Manifest Repo (GitOps)') {
                 git add .
                 git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
 
-                # ✅ push using header auth (NO URL issues)
-                git -c http.extraheader="Authorization: Bearer $GIT_TOKEN" \
+                # ✅ Use header-based auth (safe)
+                git -c http.extraheader="Authorization: Basic $(echo -n $GIT_USER:$GIT_TOKEN | base64)" \
                 push origin main
                 '''
             }
