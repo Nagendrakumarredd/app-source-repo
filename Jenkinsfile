@@ -82,35 +82,40 @@ stage('Manifest GitOps Delivery Loop') {
     steps {
         script {
             withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                sh '''
+                // ✅ Using double quotes here lets us create clear, un-truncated variables
+                sh """
                 git config --global user.email "jenkins-bot@poc.com"
                 git config --global user.name "Jenkins GitOps Engine"
 
                 rm -rf target-manifests
 
-                # Encode the password/PAT to bypass any hyphen or parsing errors entirely
-                ENCODED_TOKEN=$(echo -n "${GIT_USER}:${GIT_TOKEN}" | base64 | tr -d '\n')
+                # 1. Define the repository URL in a dedicated variable
+                REPOS_URL="https://github.com"
 
-                # Clone using an inline HTTP authorization header string
-                git -c http.extraHeader="Authorization: Basic ${ENCODED_TOKEN}" clone https://github.com target-manifests
+                # 2. Base64 encode the credentials to protect them from special characters
+                ENCODED_TOKEN=\$(echo -n "${GIT_USER}:${GIT_TOKEN}" | base64 | tr -d '\\n')
+
+                # 3. Run the clone command using the variable references
+                git -c http.extraHeader="Authorization: Basic \${ENCODED_TOKEN}" clone "\${REPOS_URL}" target-manifests
 
                 cd target-manifests
 
-                # Configure the local repository to use the exact same authorization header automatically for pushing
-                git config http.extraHeader "Authorization: Basic ${ENCODED_TOKEN}"
+                # 4. Bind the token header to the repository configuration for push access
+                git config http.extraHeader "Authorization: Basic \${ENCODED_TOKEN}"
 
-                # Update the target image deployment manifest file
+                # 5. Patch the target tracking deployment file
                 sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
 
                 git add .
                 git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
 
                 git push origin main
-                '''
+                """
             }
         }
     }
 }
+
 
 
     }
