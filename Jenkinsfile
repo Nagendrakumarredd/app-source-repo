@@ -110,8 +110,5 @@ stage('Manifest GitOps Delivery Loop') {
                     }
                 }
             }
-        }
-
-
     }
 }
