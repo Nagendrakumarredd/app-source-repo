@@ -93,28 +93,30 @@ stage('Update Manifest Repo (GitOps)') {
 
                 rm -rf target-manifests
 
-                # 1. Clone anonymously
+                # 1. Clone the repo cleanly
                 git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                 cd target-manifests
 
-                # 2. Modify the file
+                # 2. Update the manifest file
                 sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
 
                 # 3. Commit changes
                 git add .
                 git commit -m "Update image to $BUILD_NUMBER" || echo "No changes to commit"
 
-                # ✅ 4. The Real Fix: Force Git to map the URL internally using an environment variable context.
-                # This treats your special-character token strictly as data, completely bypassing shell evaluation and URL parsing bugs.
-                git config url."https://${GIT_USER}:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
+                # ✅ 4. The Fix: Pass credentials natively via Git's environment variable macro.
+                # This protects special characters from shell parsing errors entirely.
+                git config credential.helper "!f() { echo \"username=${GIT_USER}\"; echo \"password=${GIT_TOKEN}\"; }; f"
 
-                # 5. Push normally using origin (it will auto-apply the configuration above safely)
+                # 5. Push normally
                 git push origin main
                 '''
             }
         }
     }
 }
+
+        
 
 
 
