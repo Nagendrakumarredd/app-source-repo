@@ -96,6 +96,7 @@ stage('Update Manifest Repo (GitOps)') {
                 git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                 cd target-manifests
 
+                # ✅ update image tag
                 sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
 
                 echo "Updated file:"
@@ -104,13 +105,13 @@ stage('Update Manifest Repo (GitOps)') {
                 git add .
                 git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
 
-                # ✅ SAFE AUTH METHOD (FINAL FIX)
+                # ✅ FINAL FIX (secure push using askpass)
                 cat <<EOF > askpass.sh
 #!/bin/sh
 echo "$GIT_TOKEN"
 EOF
-                chmod +x askpass.sh
 
+                chmod +x askpass.sh
                 export GIT_ASKPASS=$(pwd)/askpass.sh
 
                 git push https://$GIT_USER@github.com/Nagendrakumarredd/app-manifests-repo.git main
