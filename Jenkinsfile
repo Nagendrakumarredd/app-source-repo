@@ -93,16 +93,20 @@ stage('Update Manifest Repo (GitOps)') {
 
                 rm -rf target-manifests
 
+                # 1. Clone the repo cleanly
                 git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                 cd target-manifests
 
+                # 2. Modify the manifest file
                 sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
 
+                # 3. Commit changes
                 git add .
                 git commit -m "Update image to $BUILD_NUMBER" || echo "No changes to commit"
 
-                # ✅ Solution: Wrap the URL string in quotes to stop Git from reading the token as a CLI flag
-                git push "https://${GIT_USER}:${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git" main
+                # ✅ 4. Clean Fix: Pass the plain token via the standard Git Authorization header wrapper.
+                # This completely avoids URL syntax issues and CLI flag parsing bugs.
+                git -c core.askpass=true -c http.extraheader="Authorization: Bearer ${GIT_TOKEN}" push origin main
                 '''
             }
         }
