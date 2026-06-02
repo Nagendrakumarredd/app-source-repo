@@ -82,32 +82,43 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                        // ✅ FIX: Using single quotes (''') stops Groovy interpolation warnings 
-                        // and protects token privacy in logs
                         sh '''
                         git config --global user.email "jenkins-bot@poc.com"
                         git config --global user.name "Jenkins GitOps Engine"
         
                         rm -rf target-manifests
         
-                        # ✅ FIX: The "--" tells Git to stop parsing arguments, preventing tokens starting with "-" from causing syntax errors
-                        git clone -- https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+                        # Use helper to cache credentials for the upcoming clone and push commands
+                        git config --global credential.helper cache
+                        
+                        # Dynamically feed authentication information directly to Git core
+                        echo "url=https://github.com
+                        username=${GIT_USER}
+                        password=${GIT_TOKEN}" | git credential approve
+        
+                        # Clean clone without variables inside the URL string
+                        git clone https://github.com target-manifests
         
                         cd target-manifests
         
-                        # ✅ FIX: Protect remote push URL as well
-                        git remote set-url origin -- https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git
-        
+                        # Modify deployment image tag values
                         sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
         
                         git add .
                         git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
         
+                        # Push execution matches the cached authentication configuration
                         git push origin main
+        
+                        # Wipe the temporary execution credentials out of memory cache
+                        git credential reject <<EOF
+                        url=https://github.com
+                        EOF
                         '''
                     }
                 }
             }
         }
+
     }
 }
