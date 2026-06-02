@@ -93,25 +93,24 @@ stage('Manifest GitOps Delivery Loop') {
 
                 rm -rf target-manifests
 
-                # ✅ use normal clone (no token in URL)
                 git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
 
                 cd target-manifests
 
-                # ✅ configure credentials safely
-                git config credential.helper store
-                echo "https://$GIT_USER:$GIT_TOKEN@github.com" > ~/.git-credentials
+                # ✅ create askpass helper
+                cat <<EOF > askpass.sh
+#!/bin/sh
+echo "$GIT_TOKEN"
+EOF
+                chmod +x askpass.sh
+
+                export GIT_ASKPASS=$(pwd)/askpass.sh
 
                 sed -i "s|image: .*|image: $DOCKER_IMAGE:$BUILD_NUMBER|" deployment.yaml
 
                 git add .
                 git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
 
-                git push origin main
-                '''
-            }
-        }
-    }
-}
+
     }
 }
