@@ -99,9 +99,9 @@ stage('Manifest GitOps Delivery Loop') {
 
                 # ✅ create askpass helper
                 cat <<EOF > askpass.sh
-#!/bin/sh
-echo "$GIT_TOKEN"
-EOF
+                #!/bin/sh
+                echo "$GIT_TOKEN"
+                EOF
                 chmod +x askpass.sh
 
                 export GIT_ASKPASS=$(pwd)/askpass.sh
@@ -110,7 +110,10 @@ EOF
 
                 git add .
                 git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
-
-
+                '''
+            }
+        }
+    }
+}
     }
 }
