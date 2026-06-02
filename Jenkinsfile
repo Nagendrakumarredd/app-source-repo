@@ -79,43 +79,34 @@ pipeline {
         }
 
 stage('Manifest GitOps Delivery Loop') {
-    steps {
-        script {
-            withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-                // ✅ Using double quotes here lets us create clear, un-truncated variables
-                sh """
-                git config --global user.email "jenkins-bot@poc.com"
-                git config --global user.name "Jenkins GitOps Engine"
-
-                rm -rf target-manifests
-
-                # 1. Define the repository URL in a dedicated variable
-                REPOS_URL="https://github.com"
-
-                # 2. Base64 encode the credentials to protect them from special characters
-                ENCODED_TOKEN=\$(echo -n "${GIT_USER}:${GIT_TOKEN}" | base64 | tr -d '\\n')
-
-                # 3. Run the clone command using the variable references
-                git -c http.extraHeader="Authorization: Basic \${ENCODED_TOKEN}" clone "\${REPOS_URL}" target-manifests
-
-                cd target-manifests
-
-                # 4. Bind the token header to the repository configuration for push access
-                git config http.extraHeader "Authorization: Basic \${ENCODED_TOKEN}"
-
-                # 5. Patch the target tracking deployment file
-                sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
-
-                git add .
-                git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
-
-                git push origin main
-                """
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
+        
+                        sh """
+                        git config --global user.email "jenkins-bot@poc.com"
+                        git config --global user.name "Jenkins GitOps Engine"
+        
+                        rm -rf target-manifests
+        
+                        git clone https://${GIT_TOKEN}@github.com/tejaravutla287/app-manifests-repo.git target-manifests
+        
+                        cd target-manifests
+        
+                        # ✅ FIX: Set remote with PAT for push
+                        git remote set-url origin https://${GIT_TOKEN}@github.com/tejaravutla287/app-manifests-repo.git
+        
+                        sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
+        
+                        git add .
+                        git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
+        
+                        git push origin main
+                        """
+                    }
+                }
             }
         }
-    }
-}
-
 
 
     }
