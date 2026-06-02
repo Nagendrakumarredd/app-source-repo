@@ -78,38 +78,46 @@ pipeline {
             }
         }
 
-        stage('Update Manifest Repo (GitOps)') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'git-pat',
-                        usernameVariable: 'GIT_USER',
-                        passwordVariable: 'GIT_TOKEN'
-                    )]) {
-        
-                        sh '''
-                        git config --global user.email "jenkins-bot@poc.com"
-                        git config --global user.name "Jenkins GitOps Engine"
-        
-                        rm -rf target-manifests
-        
-                        git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
-                        cd target-manifests
-        
-                        sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
-        
-                        echo "Updated file:"
-                        grep image deployment.yaml
-        
-                        git add .
-                        git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
-        
-                        # ✅ FIX HERE (quotes added)
-                        git push "https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git" main
-                        '''
-                    }
-                }
+stage('Update Manifest Repo (GitOps)') {
+    steps {
+        script {
+            withCredentials([usernamePassword(
+                credentialsId: 'git-pat',
+                usernameVariable: 'GIT_USER',
+                passwordVariable: 'GIT_TOKEN'
+            )]) {
+
+                sh '''
+                git config --global user.email "jenkins-bot@poc.com"
+                git config --global user.name "Jenkins GitOps Engine"
+
+                rm -rf target-manifests
+
+                git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+                cd target-manifests
+
+                sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
+
+                echo "Updated file:"
+                grep image deployment.yaml
+
+                git add .
+                git commit -m "Update image to $BUILD_NUMBER" || echo "No changes"
+
+                # ✅ SAFE AUTH METHOD (FINAL FIX)
+                cat <<EOF > askpass.sh
+#!/bin/sh
+echo "$GIT_TOKEN"
+EOF
+                chmod +x askpass.sh
+
+                export GIT_ASKPASS=$(pwd)/askpass.sh
+
+                git push https://$GIT_USER@github.com/Nagendrakumarredd/app-manifests-repo.git main
+                '''
             }
         }
+    }
+}
     }
 }
