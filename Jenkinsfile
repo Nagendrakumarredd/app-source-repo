@@ -1,8 +1,8 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE     = 'bhanutejaravutla/simple-app'
-        SONAR_ORG        = 'tejaravutla287'
+        DOCKER_IMAGE     = 'syamalanagendrakumarreddy/simple-app'
+        SONAR_ORG        = 'Syamala Nagendra Kumar Reddy'
         SONAR_PROJ       = 'simple-app'
         JAVA_TOOL_OPTIONS = "-Xms512m -Xmx1024m -XX:MaxMetaspaceSize=512m"
     }
@@ -89,12 +89,12 @@ pipeline {
         
                         rm -rf target-manifests
         
-                        git clone https://${GIT_TOKEN}@github.com/tejaravutla287/app-manifests-repo.git target-manifests
+                        git clone https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
         
                         cd target-manifests
         
                         # ✅ FIX: Set remote with PAT for push
-                        git remote set-url origin https://${GIT_TOKEN}@github.com/tejaravutla287/app-manifests-repo.git
+                        git remote set-url origin https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git
         
                         sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
         
