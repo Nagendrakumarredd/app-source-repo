@@ -93,28 +93,28 @@ stage('Update Manifest Repo (GitOps)') {
 
                 rm -rf target-manifests
 
-                # 1. Clone the repository anonymously
+                # 1. Clone repository
                 git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
                 cd target-manifests
 
-                # 2. Modify the manifest file
+                # 2. Modify manifest file
                 sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
 
                 # 3. Commit your changes
                 git add .
                 git commit -m "Update image to $BUILD_NUMBER" || echo "No changes to commit"
 
-                # ✅ 4. The Fix: Feed the password directly to Git's native credential memory space
-                # This completely isolates special characters from both the URL engine and the CLI parser.
-                git config credential.helper "!f() { echo password=\$GIT_TOKEN; }; f"
+                # ✅ 4. Fixed: Provide BOTH username and password to the credential helper
+                git config credential.helper "!f() { echo username=\\$GIT_USER; echo password=\\${GIT_TOKEN}; }; f"
 
-                # 5. Push normally using standard HTTPS URL
+                # 5. Push normally
                 git push origin main
                 '''
             }
         }
     }
 }
+
 
 
 
