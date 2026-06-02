@@ -93,11 +93,11 @@ pipeline {
         
                         rm -rf target-manifests
         
-                        git clone https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+                        git clone "https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git" target-manifests
         
                         cd target-manifests
         
-                        git remote set-url origin https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git
+                        git remote set-url origin "https://$GIT_USER:$GIT_TOKEN@github.com/Nagendrakumarredd/app-manifests-repo.git"
         
                         sed -i "s|image: .*|image: $DOCKER_IMAGE:$BUILD_NUMBER|" deployment.yaml
         
