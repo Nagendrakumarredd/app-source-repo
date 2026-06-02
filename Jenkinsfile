@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE     = 'syamalanagendrakumarreddy/simple-app'
-        SONAR_ORG        = 'nagendrakumarredd'
+        SONAR_ORG        = 'Nagendrakumarredd_app-source-repo'
         SONAR_PROJ       = 'simple-app'
         JAVA_TOOL_OPTIONS = "-Xms512m -Xmx1024m -XX:MaxMetaspaceSize=512m"
     }
