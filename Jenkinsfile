@@ -81,21 +81,22 @@ pipeline {
         stage('Manifest GitOps Delivery Loop') {
             steps {
                 script {
-                    // ✅ FIX: Extract the password component from your Username/Password credential
                     withCredentials([usernamePassword(credentialsId: 'git-pat', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-        
-                        sh """
+                        // ✅ FIX: Using single quotes (''') stops Groovy interpolation warnings 
+                        // and protects token privacy in logs
+                        sh '''
                         git config --global user.email "jenkins-bot@poc.com"
                         git config --global user.name "Jenkins GitOps Engine"
         
                         rm -rf target-manifests
         
-                        git clone https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+                        # ✅ FIX: The "--" tells Git to stop parsing arguments, preventing tokens starting with "-" from causing syntax errors
+                        git clone -- https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
         
                         cd target-manifests
         
-                        # Set remote with PAT for push
-                        git remote set-url origin https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git
+                        # ✅ FIX: Protect remote push URL as well
+                        git remote set-url origin -- https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git
         
                         sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
         
@@ -103,7 +104,7 @@ pipeline {
                         git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
         
                         git push origin main
-                        """
+                        '''
                     }
                 }
             }
