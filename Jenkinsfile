@@ -95,8 +95,7 @@ withCredentials([usernamePassword(
                 rm -rf target-manifests
 
                 # ✅ clone using Bearer token
-                git -c http.https://github.com/.extraheader="AUTHORIZATION: bearer $GIT_TOKEN" \
-                clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+                git clone https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
 
                 cd target-manifests
 
@@ -110,8 +109,7 @@ withCredentials([usernamePassword(
                 git commit -m "Update image tag to build $BUILD_NUMBER" || echo "No changes"
 
                 # ✅ push using Bearer token
-                git -c http.https://github.com/.extraheader="AUTHORIZATION: bearer $GIT_TOKEN" \
-                push origin main
+                git push https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git main
                 '''
             }
         }
