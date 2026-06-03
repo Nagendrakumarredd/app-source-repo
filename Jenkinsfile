@@ -78,46 +78,39 @@ pipeline {
             }
         }
 
-        stage('Manifest GitOps Delivery Loop') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'git-pat',
-                        usernameVariable: 'GIT_USER',
-                        passwordVariable: 'GIT_TOKEN'
-                    )]) {
-        
-                        sh '''
-                        git config --global user.email "jenkins-bot@poc.com"
-                        git config --global user.name "Jenkins GitOps Engine"
-        
-                        rm -rf target-manifests
-        
-                        # ✅ ALWAYS clone without token
-                        git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
-        
-                        cd target-manifests
-        
-                        # ✅ update image
-                        sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
-        
-                        echo "Updated file:"
-                        grep image deployment.yaml
-        
-                        git add .
-                        git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
-        
-                        # ✅ FINAL AUTH FIX (safe method)
-                        AUTH=$(echo -n "$GIT_USER:$GIT_TOKEN" | base64 -w 0)
-        
-                        git -c http.extraheader="Authorization: Basic $AUTH" \
-                        push https://github.com/Nagendrakumarredd/app-manifests-repo.git main
+stage('Manifest GitOps Delivery Loop') {
+    steps {
+        script {
+            withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
 
-                        '''
-                    }
-                }
+                sh '''
+                git config --global user.email "jenkins-bot@poc.com"
+                git config --global user.name "Jenkins GitOps Engine"
+
+                rm -rf target-manifests
+
+                # ✅ clone using Bearer token
+                git -c http.https://github.com/.extraheader="AUTHORIZATION: bearer $GIT_TOKEN" \
+                clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+
+                cd target-manifests
+
+                sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
+
+                echo "Updated file:"
+                grep image deployment.yaml
+
+                git add .
+                git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
+
+                # ✅ push using Bearer token
+                git -c http.https://github.com/.extraheader="AUTHORIZATION: bearer $GIT_TOKEN" \
+                push origin main
+                '''
             }
         }
+    }
+}
 
     }
 }
