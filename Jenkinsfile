@@ -108,7 +108,7 @@ pipeline {
                         git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
         
                         # ✅ FINAL AUTH FIX (safe method)
-                        AUTH=$(echo -n "$GIT_USER:$GIT_TOKEN" | base64)
+                        AUTH=$(echo -n "$GIT_USER:$GIT_TOKEN" | base64 -w 0)
         
                         git -c http.extraheader="Authorization: Basic $AUTH" push origin main
                         '''
