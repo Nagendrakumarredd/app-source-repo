@@ -81,13 +81,7 @@ pipeline {
 stage('Manifest GitOps Delivery Loop') {
     steps {
         script {
-            
-withCredentials([usernamePassword(
-                credentialsId: 'git-pat',
-                usernameVariable: 'GIT_USER',
-                passwordVariable: 'GIT_TOKEN'
-            )])
- {
+            withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
 
                 sh '''
                 git config --global user.email "jenkins-bot@poc.com"
@@ -101,13 +95,14 @@ withCredentials([usernamePassword(
 
                 cd target-manifests
 
-                sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
+                # 🛠️ FIX: Updates ONLY the tag (the part after the colon)
+                sed -i "s|\\(image:[^:]*\\):.*|\\1:$BUILD_NUMBER|g" deployment.yaml
 
                 echo "Updated file:"
                 grep image deployment.yaml
 
                 git add .
-                git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
+                git commit -m "Update image tag to build $BUILD_NUMBER" || echo "No changes"
 
                 # ✅ push using Bearer token
                 git -c http.https://github.com/.extraheader="AUTHORIZATION: bearer $GIT_TOKEN" \
@@ -117,6 +112,7 @@ withCredentials([usernamePassword(
         }
     }
 }
+
 
     }
 }
