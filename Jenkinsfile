@@ -110,7 +110,9 @@ pipeline {
                         # ✅ FINAL AUTH FIX (safe method)
                         AUTH=$(echo -n "$GIT_USER:$GIT_TOKEN" | base64 -w 0)
         
-                        git -c http.extraheader="Authorization: Basic $AUTH" push origin main
+                        git -c http.extraheader="Authorization: Basic $AUTH" \
+                        push https://github.com/Nagendrakumarredd/app-manifests-repo.git main
+
                         '''
                     }
                 }
