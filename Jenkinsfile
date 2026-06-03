@@ -78,50 +78,26 @@ pipeline {
             }
         }
 
-stage('Update Manifest Repo (GitOps)') {
-    steps {
-        script {
-            withCredentials([usernamePassword(
-                credentialsId: 'git-pat',
-                usernameVariable: 'GIT_USER',
-                passwordVariable: 'GIT_TOKEN'
-            )]) {
-
-                sh '''
-                git config --global user.email "jenkins-bot@poc.com"
-                git config --global user.name "Jenkins GitOps Engine"
-
-                rm -rf target-manifests
-
-                # 1. Clone the repo cleanly
-                git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
-                cd target-manifests
-
-                # 2. Update the manifest file
-                sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
-
-                # 3. Commit changes
-                git add .
-                git commit -m "Update image to $BUILD_NUMBER" || echo "No changes to commit"
-
-                # ✅ 4. The Fix: Pass credentials natively via Git's environment variable macro.
-                # This protects special characters from shell parsing errors entirely.
-                git config credential.helper "!f() { echo \"username=${GIT_USER}\"; echo \"password=${GIT_TOKEN}\"; }; f"
-
-                # 5. Push normally
-                git push origin main
-                '''
+        stage('Manifest GitOps Delivery Loop') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
+                        sh """
+                        git config --global user.email "jenkins-bot@poc.com"
+                        git config --global user.name "Jenkins GitOps Engine"
+                        rm -rf target-manifests
+                        git clone https://${GIT_TOKEN}@github.com/tejaravutla287/app-manifests-repo.git target-manifests
+                        cd target-manifests
+                        # ✅ FIX: Set remote with PAT for push
+                        git remote set-url origin https://${GIT_TOKEN}@github.com/tejaravutla287/app-manifests-repo.git
+                        sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
+                        git add .
+                        git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
+                        git push origin main
+                        """
+                    }
+                }
             }
         }
-    }
-}
-
-        
-
-
-
-
-
-
     }
 }
