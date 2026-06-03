@@ -81,7 +81,12 @@ pipeline {
 stage('Manifest GitOps Delivery Loop') {
     steps {
         script {
-            withCredentials([string(credentialsId: 'git-pat', variable: 'GIT_TOKEN')]) {
+            
+withCredentials([usernamePassword(
+                credentialsId: 'git-pat',
+                usernameVariable: 'GIT_USER',
+                passwordVariable: 'GIT_TOKEN'
+            )]) {
 
                 sh '''
                 git config --global user.email "jenkins-bot@poc.com"
