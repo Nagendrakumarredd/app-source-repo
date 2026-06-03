@@ -82,25 +82,40 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(
-                credentialsId: 'git-pat',
-                usernameVariable: 'GIT_USER',
-                passwordVariable: 'GIT_TOKEN')]) {
-                        sh """
+                        credentialsId: 'git-pat',
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_TOKEN'
+                    )]) {
+        
+                        sh '''
                         git config --global user.email "jenkins-bot@poc.com"
                         git config --global user.name "Jenkins GitOps Engine"
+        
                         rm -rf target-manifests
-                        git clone https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+        
+                        # ✅ ALWAYS clone without token
+                        git clone https://github.com/Nagendrakumarredd/app-manifests-repo.git target-manifests
+        
                         cd target-manifests
-                        # ✅ FIX: Set remote with PAT for push
-                        git remote set-url origin https://${GIT_TOKEN}@github.com/Nagendrakumarredd/app-manifests-repo.git
-                        sed -i "s|image: .*|image: ${DOCKER_IMAGE}:${BUILD_NUMBER}|" deployment.yaml
+        
+                        # ✅ update image
+                        sed -i "s|image:.*|image: $DOCKER_IMAGE:$BUILD_NUMBER|g" deployment.yaml
+        
+                        echo "Updated file:"
+                        grep image deployment.yaml
+        
                         git add .
-                        git commit -m "Update image to build ${BUILD_NUMBER}" || echo "No changes"
-                        git push origin main
-                        """
+                        git commit -m "Update image to build $BUILD_NUMBER" || echo "No changes"
+        
+                        # ✅ FINAL AUTH FIX (safe method)
+                        AUTH=$(echo -n "$GIT_USER:$GIT_TOKEN" | base64)
+        
+                        git -c http.extraheader="Authorization: Basic $AUTH" push origin main
+                        '''
                     }
                 }
             }
         }
+
     }
 }
